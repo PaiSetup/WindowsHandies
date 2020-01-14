@@ -23,25 +23,6 @@ const IconFileCriterion iconFileFinders[] = {
         return IconFileCriterionResult::DontKnow;
     },
 
-    // Accept hardcoded names
-    +[](const std::wstring &directoryName, const std::wstring &fileName) {
-        std::vector<std::pair<std::wstring, std::wstring>> acceptMap{
-            {L"Bandicut", L"bdcut"},
-            {L"BeyondCompare", L"BCompare"},
-            {L"Beyond Compare", L"BCompare"},
-            {L"cmake", L"cmake-gui"},
-        };
-
-        for (auto i = 0u; i < acceptMap.size(); i++) {
-            const auto names = acceptMap[i];
-            const bool directoryMatch = StringHelper::compareCaseInsensitive(names.first, directoryName);
-            const bool fileMatch = StringHelper::compareCaseInsensitive(names.second, fileName);
-            if (directoryMatch && fileMatch) {
-                return IconFileCriterionResult::Accept;
-            }
-        }
-        return IconFileCriterionResult::DontKnow;
-    },
 };
 
 const unsigned int iconFileFindersCount = sizeof(iconFileFinders) / sizeof(IconFileCriterion);
