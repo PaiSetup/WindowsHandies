@@ -40,14 +40,20 @@ void printHelp() {
     std::wcout << "IconSetter\n"
                << "\n"
                << "Iterates over input directories, selects the most appriopriate icon files for them\n"
-               << "and sets the icons using Windows API.\n"
+               << "and sets the icons using Windows API. Path to folder with directories to set icon for\n"
+               << "and at least one icon search method \n"
+               << "\n"
+               << "Usage\n"
+               << "  IconSetter.exe -d E:\\Programs -r -f\n"
+               << "  IconSetter.exe -d D: -l D:\\Pictures\\Icons -f\n"
                << "\n"
                << "Options\n"
-               << "\t-d\tDirectory - directory, whose children will be updated. Required.\n"
-               << "\t-r\tRecursive search - search recursively each directory for icon files to set\n"
-               << "\t-l <path>\tIcon library path - path to directory containing icons chosen using filenames\n"
-               << "\t-f\tForce action - do not prompt user before updating icons\n"
-               << "\t-h\tHelp\n";
+               << "  -d <path>  Directory - directory, whose children will be updated. Required.\n"
+               << "  -r         Recursive search - enabled recursive search within each directory for icon files\n"
+               << "  -l <path>  Icon library path - enables icon library search - select icons from within the\n"
+               << "             library directory based on file names.\n"
+               << "  -f         Force action - do not prompt user before updating the icons\n"
+               << "  -h         Display this help message\n";
 }
 
 int main(int argc, char **argv) {
@@ -65,26 +71,26 @@ int main(int argc, char **argv) {
     }
 
     if (directory.empty()) {
-        std::wcerr << "ERROR: no input\n";
         printHelp();
+        std::wcerr << "ERROR: no input\n";
         return 1;
     }
 
     if (!FileHelper::isDirectory(directory.c_str())) {
-        std::wcerr << "ERROR: invalid directory specified\n";
         printHelp();
+        std::wcerr << "ERROR: invalid directory specified\n";
         return 1;
     }
 
     if (!recursiveSearch && iconLibraryPath.empty()) {
-        std::wcerr << "ERROR: no icon search algorithm chosen\n";
         printHelp();
+        std::wcerr << "ERROR: no icon search algorithm chosen\n";
         return 1;
     }
 
     if (!iconLibraryPath.empty() && !FileHelper::isDirectory(iconLibraryPath.c_str())) {
-        std::wcerr << "ERROR: invalid icon library path specified\n";
         printHelp();
+        std::wcerr << "ERROR: invalid icon library path specified\n";
         return 1;
     }
 
@@ -118,9 +124,11 @@ int main(int argc, char **argv) {
     }
 
     // Execute
+    std::wcout << "Setting icons...\n";
     for (const auto &entry : directoriesWithIcons) {
         setIcon(entry.directory, entry.iconFile, 0);
     }
 
+    std::wcout << "Done\n";
     return 0;
 }
