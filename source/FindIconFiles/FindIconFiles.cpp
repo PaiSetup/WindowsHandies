@@ -6,6 +6,10 @@
 
 #include <Windows.h>
 
+static void findIconFileInIconLibrary(const std::wstring &iconLibrary, const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
+    // TODO implement
+}
+
 static void findIconFileHardcoded(const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
     const static std::vector<std::pair<std::wstring, std::wstring>> hardcodedMap{
         {L"Bandicut", L"bdcut.exe"},
@@ -101,14 +105,20 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
     }
 }
 
-std::vector<std::wstring> findIconFile(const std::wstring &directory) {
+std::vector<std::wstring> findIconFile(const std::wstring &directory, bool recursiveSearch, std::wstring iconLibraryPath) {
     std::vector<std::wstring> iconFiles{};
 
-    findIconFileHardcoded(directory, iconFiles);
-    if (!iconFiles.empty()) {
-        return iconFiles;
+    if (!iconLibraryPath.empty()) {
+        findIconFileInIconLibrary(iconLibraryPath, directory, iconFiles);
     }
 
-    findIconFileRecursively(directory, directory, iconFiles);
+    if (recursiveSearch) {
+        findIconFileHardcoded(directory, iconFiles);
+        if (!iconFiles.empty()) {
+            return iconFiles;
+        }
+        findIconFileRecursively(directory, directory, iconFiles);
+    }
+
     return iconFiles;
 }
