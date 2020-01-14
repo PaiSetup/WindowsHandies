@@ -5,13 +5,15 @@
 #include "source/Utility/FileHelper.h"
 
 #include <Windows.h>
+#include <iostream>
 
 static void findIconFileInIconLibrary(const std::wstring &iconLibrary, const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
     // Begin search
     WIN32_FIND_DATAW file{};
     HANDLE search_handle = FindFirstFileW((iconLibrary + L"\\*.ico").c_str(), &file);
     if (search_handle == INVALID_HANDLE_VALUE) {
-        // TODO return error
+        std::wcerr << "WARNING: Failed during icon library search\n";
+        return;
     }
 
     // Search directory
@@ -61,7 +63,8 @@ static void findIconFileHardcoded(const std::wstring &directory, std::vector<std
 
     const std::wstring fileFullPath = directory + L"\\" + fileName;
     if (!FileHelper::isFile(fileFullPath)) {
-        throw 1; // TODO incorrect hardcoding, handle this better
+        std::wcerr << "WARNING: failed during recursive search - hardcoded path was set incorrectly\n";
+        return;
     }
 
     outIconFiles.push_back(fileFullPath);
@@ -72,7 +75,7 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
     WIN32_FIND_DATAW file{};
     HANDLE search_handle = FindFirstFileW((directory + L"\\*").c_str(), &file);
     if (search_handle == INVALID_HANDLE_VALUE) {
-        // TODO return error
+        std::wcerr << "WARNING: Failed during recursive search\n";
     }
 
     // Search directory

@@ -23,7 +23,7 @@ void setIcon(const std::wstring &directory, const std::wstring &iconFile, int ic
     HRESULT result = SHGetSetFolderCustomSettings(&fcs, directory.c_str(), FCS_FORCEWRITE);
     if (result != S_OK) {
         auto err = GetLastError();
-        throw 1; // TODO handle
+        std::wcerr << "WARNING: failed setting icon for \"" << directory << "\"\n";
     }
 }
 
