@@ -15,6 +15,10 @@ static void findIconFileHardcoded(const std::wstring &directory, std::vector<std
         {L"IntelliJ", L"bin\\idea.exe"},
         {L"irfanview", L"i_view64.exe"},
         {L"MikTex", L"miktex\\bin\\x64\\mf.exe"},
+        {L"MicrosoftOffice2013", L"Office15\\FIRSTRUN.exe"},
+        {L"Octave", L"share\\octave\\4.2.2\\imagelib\\octave-logo.ico"},
+        {L"Jenkins", L"war\\favicon.ico"},
+        {L"Git", L"git-cmd.exe"},
     };
 
     const std::wstring rootDirectoryBaseName = StringHelper::deleteSpaces(StringHelper::basename(directory));
@@ -50,7 +54,7 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
     std::vector<std::wstring> subDirectories{};
     do {
         // Prepare names in appriopriate formats
-        const std::wstring fileName = std::wstring{ file.cFileName };
+        const std::wstring fileName = std::wstring{file.cFileName};
         IconFileCriterionInput criterionInput{};
         criterionInput.rootDirectoryBaseName = StringHelper::deleteSpaces(StringHelper::basename(rootDirectory));
         criterionInput.fileFullPath = directory + L"\\" + fileName;
@@ -102,7 +106,7 @@ std::vector<std::wstring> findIconFile(const std::wstring &directory) {
 
     findIconFileHardcoded(directory, iconFiles);
     if (!iconFiles.empty()) {
-        iconFiles;
+        return iconFiles;
     }
 
     findIconFileRecursively(directory, directory, iconFiles);
