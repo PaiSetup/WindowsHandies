@@ -49,32 +49,29 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
     // Search directory
     std::vector<std::wstring> subDirectories{};
     do {
+        // Prepare names in appriopriate formats
+        const std::wstring fileName = std::wstring{ file.cFileName };
+        IconFileCriterionInput criterionInput{};
+        criterionInput.rootDirectoryBaseName = StringHelper::deleteSpaces(StringHelper::basename(rootDirectory));
+        criterionInput.fileFullPath = directory + L"\\" + fileName;
+        criterionInput.fileNameWithoutExtension = StringHelper::getFileNameWithoutExtension(fileName);
+        criterionInput.fileExtension = StringHelper::getFileNameExtension(fileName);
+
+        // Ignore pseudo-files
         if (FileHelper::isCurrentOrParentDirectory(file)) {
             continue;
         }
 
-        const std::wstring fileName{file.cFileName};
-        const std::wstring fileFullPath = directory + L"\\" + fileName;
-        const std::wstring fileExtension = StringHelper::getFileNameExtension(fileName);
-
-        if (FileHelper::isDirectory(fileFullPath)) {
-            subDirectories.push_back(fileFullPath);
+        // Cache subdirectories to step into them later
+        if (FileHelper::isDirectory(criterionInput.fileFullPath)) {
+            subDirectories.push_back(criterionInput.fileFullPath);
             continue;
         }
 
-        if (!FileHelper::isFile(fileFullPath)) {
-            continue;
-        }
-
-        if (!FileHelper::isIconCompatibleExtension(fileExtension)) {
-            continue;
-        }
-
-        const std::wstring rootDirectoryBaseName = StringHelper::deleteSpaces(StringHelper::basename(rootDirectory));
-        const std::wstring fileBaseName = StringHelper::getFileNameWithoutExtension(fileName);
+        // Iterate over available criteria
         IconFileCriterionResult criteriaResult = IconFileCriterionResult::DontKnow;
         for (auto i = 0u; i < iconFileFindersCount; i++) {
-            const auto result = iconFileFinders[i](rootDirectoryBaseName, fileBaseName);
+            const auto result = iconFileFinders[i](criterionInput);
             if (result == IconFileCriterionResult::Deny) {
                 criteriaResult = IconFileCriterionResult::Deny;
             }
@@ -83,8 +80,9 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
             }
         }
 
+        // Push result if accepted acording to criteria
         if (criteriaResult == IconFileCriterionResult::Accept) {
-            outIconFiles.push_back(fileFullPath);
+            outIconFiles.push_back(criterionInput.fileFullPath);
         }
     } while (FindNextFileW(search_handle, &file));
 

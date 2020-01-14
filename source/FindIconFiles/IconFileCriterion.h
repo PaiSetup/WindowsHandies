@@ -8,7 +8,15 @@ enum class IconFileCriterionResult {
     Deny,
     DontKnow,
 };
-using IconFileCriterion = std::function<IconFileCriterionResult(const std::wstring &, const std::wstring &)>;
+
+struct IconFileCriterionInput {
+    std::wstring rootDirectoryBaseName;
+    std::wstring fileFullPath;
+    std::wstring fileNameWithoutExtension;
+    std::wstring fileExtension;
+};
+
+using IconFileCriterion = std::function<IconFileCriterionResult(const IconFileCriterionInput &input)>;
 
 extern const IconFileCriterion iconFileFinders[];
 extern const unsigned int iconFileFindersCount;

@@ -11,7 +11,7 @@ int main() {
 
     auto subdirectories = getSubdirectories(L"E:\\Programs");
     for (const auto &directory : subdirectories) {
-        std::wcout << directory << "\t";
+        std::wcout << directory << "\t\t\t";
         auto iconFiles = findIconFile(directory);
         for (const auto &iconFile : iconFiles) {
             std::wcout << iconFile << " ";
