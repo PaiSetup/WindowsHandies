@@ -22,7 +22,7 @@ static void findIconFileInIconLibrary(const std::wstring &iconLibrary, const std
         const std::wstring fileNameWithoutExtension = StringHelper::getFileNameWithoutExtension(fileName);
 
         if (StringHelper::compareCaseInsensitive(directoryBaseName, fileNameWithoutExtension)) {
-            const std::wstring fileFullPath = directory + L"\\" + fileName;
+            const std::wstring fileFullPath = iconLibrary + L"\\" + fileName;
             outIconFiles.push_back(fileFullPath);
         }
     } while (FindNextFileW(search_handle, &file));
