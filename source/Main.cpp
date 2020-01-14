@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
         std::wcout << "\t" << std::left << std::setw(30) << directory; // TODO magic number
 
         const auto iconFiles = findIconFile(directory, recursiveSearch, iconLibraryPath);
-        const auto iconFile = (iconFiles.size() > 0) ? iconFiles[0] : L"NOT FOUND";
+        const auto iconFile = (iconFiles.size() > 0) ? iconFiles[0] : L"";
 
         directoriesWithIcons.push_back({directory, iconFile});
         std::wcout << "\t" << iconFile << "\n";
@@ -126,7 +126,9 @@ int main(int argc, char **argv) {
     // Execute
     std::wcout << "Setting icons...\n";
     for (const auto &entry : directoriesWithIcons) {
-        setIcon(entry.directory, entry.iconFile, 0);
+        if (!entry.iconFile.empty()) {
+            setIcon(entry.directory, entry.iconFile, 0);
+        }
     }
 
     std::wcout << "Done\n";
