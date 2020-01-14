@@ -7,7 +7,28 @@
 #include <Windows.h>
 
 static void findIconFileInIconLibrary(const std::wstring &iconLibrary, const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
-    // TODO implement
+    // Begin search
+    WIN32_FIND_DATAW file{};
+    HANDLE search_handle = FindFirstFileW((iconLibrary + L"\\*.ico").c_str(), &file);
+    if (search_handle == INVALID_HANDLE_VALUE) {
+        // TODO return error
+    }
+
+    // Search directory
+    do {
+        const std::wstring directoryBaseName = StringHelper::basename(directory);
+        const std::wstring fileName = std::wstring{ file.cFileName };
+        const std::wstring fileNameExtension = StringHelper::getFileNameExtension(fileName);
+        const std::wstring fileNameWithoutExtension = StringHelper::getFileNameWithoutExtension(fileName);
+
+        if (StringHelper::compareCaseInsensitive(directoryBaseName, fileNameWithoutExtension)) {
+            const std::wstring fileFullPath = directory + L"\\" + fileName;
+            outIconFiles.push_back(fileFullPath);
+        }
+    } while (FindNextFileW(search_handle, &file));
+
+    // End search
+    FindClose(search_handle);
 }
 
 static void findIconFileHardcoded(const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
@@ -51,7 +72,7 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
     WIN32_FIND_DATAW file{};
     HANDLE search_handle = FindFirstFileW((directory + L"\\*").c_str(), &file);
     if (search_handle == INVALID_HANDLE_VALUE) {
-        // return error
+        // TODO return error
     }
 
     // Search directory
@@ -110,6 +131,9 @@ std::vector<std::wstring> findIconFile(const std::wstring &directory, bool recur
 
     if (!iconLibraryPath.empty()) {
         findIconFileInIconLibrary(iconLibraryPath, directory, iconFiles);
+        if (!iconFiles.empty()) {
+            return iconFiles;
+        }
     }
 
     if (recursiveSearch) {
