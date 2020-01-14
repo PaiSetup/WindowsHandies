@@ -27,15 +27,6 @@ void setIcon(const std::wstring &directory, const std::wstring &iconFile, int ic
     }
 }
 
-struct UserInput {
-    struct Boolean {
-    };
-
-    // library or recursive or both
-    // if (library || both) - library path
-    // ask before?
-};
-
 void printHelp() {
     std::wcout << "IconSetter\n"
                << "\n"
