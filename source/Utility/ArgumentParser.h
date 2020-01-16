@@ -36,11 +36,11 @@ private:
     }
     template <typename WString, typename = std::enable_if_t<std::is_same<WString, std::wstring>::value>>
     static std::wstring convertFunction(const std::string &arg) {
-        std::wstring result(arg.size(), L' ');
+        std::wstring result(arg.size() + 1, L' ');
         const auto cap = result.capacity();
-        size_t newSize{};
-        const auto error = ::mbstowcs_s(&newSize, &result[0], result.capacity(), arg.c_str(), arg.size());
-        result.resize(newSize - 1);
+        size_t charsConverted{};
+        const auto error = ::mbstowcs_s(&charsConverted, &result[0], result.capacity(), arg.c_str(), arg.size());
+        result.resize(charsConverted - 1);
         return result;
     }
 
