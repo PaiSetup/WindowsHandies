@@ -36,10 +36,10 @@ void printHelp() {
                << "\n"
                << "Usage\n"
                << "  IconSetter.exe -d E:\\Programs -r -f\n"
-               << "  IconSetter.exe -d D: -l D:\\Pictures\\Icons -f\n"
+               << "  IconSetter.exe -d D: -d D:\\Pictures -l D:\\Pictures\\Icons -f\n"
                << "\n"
                << "Options\n"
-               << "  -d <path>  Directory - directory, whose children will be updated. Required.\n"
+               << "  -d <path>  Directory - directory, whose children will be updated. Required one or more.\n"
                << "  -r         Recursive search - enabled recursive search within each directory for icon files\n"
                << "  -l <path>  Icon library path - enables icon library search - select icons from within the\n"
                << "             library directory based on file names.\n"
@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
     // Parse arguments
     ArgumentParser parser{argc, argv};
     const auto help = parser.getArgumentValue<bool>("-h", false);
-    const auto directory = parser.getArgumentValue<std::wstring>("-d", L"");
+    const auto directories = parser.getArgumentValues<std::wstring>("-d");
     const auto recursiveSearch = parser.getArgumentValue<bool>("-r", false);
     const auto iconLibraryPath = parser.getArgumentValue<std::wstring>("-l", L"");
     const auto forceAction = parser.getArgumentValue<bool>("-f", false);
@@ -61,16 +61,18 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    if (directory.empty()) {
+    if (directories.empty()) {
         printHelp();
         std::wcerr << "ERROR: no input\n";
         return 1;
     }
 
-    if (!FileHelper::isDirectory(directory.c_str())) {
-        printHelp();
-        std::wcerr << "ERROR: invalid directory specified\n";
-        return 1;
+    for (const auto &directory : directories) {
+        if (!FileHelper::isDirectory(directory.c_str())) {
+            printHelp();
+            std::wcerr << "ERROR: invalid directory specified - \"" << directory << "\"\n";
+            return 1;
+        }
     }
 
     if (!recursiveSearch && iconLibraryPath.empty()) {
@@ -87,7 +89,7 @@ int main(int argc, char **argv) {
 
     // Find icon files
     std::cout << "Looking for icons...\n";
-    const auto subdirectories = getSubdirectories(directory);
+    const auto subdirectories = getSubdirectories(directories);
     struct DirectoryWithIcons {
         std::wstring directory;
         std::wstring iconFile;
