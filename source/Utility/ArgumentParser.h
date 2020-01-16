@@ -14,15 +14,21 @@ public:
         }
     }
 
-    // Helper for single-name arguments
+    // Helpers for single-name arguments
     template <typename ResultType>
     ResultType getArgumentValue(const std::string &name, const ResultType &defaultValue) {
         return getArgumentValue<ResultType>(std::vector<std::string>{name}, defaultValue);
     }
+    template <typename ResultType>
+    std::vector<ResultType> getArgumentValues(const std::string &name) {
+        return getArgumentValues<ResultType>(std::vector<std::string>{name});
+    }
 
-    // Lookup method, varying implementation for different types
+    // Lookup methods, varying implementation for different types
     template <typename ResultType>
     ResultType getArgumentValue(const std::vector<std::string> &names, const ResultType &defaultValue);
+    template <typename ResultType>
+    std::vector<ResultType> getArgumentValues(const std::vector<std::string> &names);
 
 private:
     // Conversion from string to various types
@@ -73,4 +79,27 @@ inline ResultType ArgumentParser::getArgumentValue(const std::vector<std::string
         return ArgumentParser::convertFunction<ResultType>(*valueIt);
     }
     return defaultValue;
+}
+
+template <typename ResultType>
+inline std::vector<ResultType> ArgumentParser::getArgumentValues(const std::vector<std::string> &names) {
+    std::vector<ResultType> result{};
+    for (auto &name : names) {
+        auto nameIt = this->args.begin();
+        while (true) {
+            nameIt = std::find(nameIt, this->args.end(), name);
+            if (nameIt == this->args.end()) {
+                break;
+            }
+
+            auto valueIt = nameIt + 1;
+            if (valueIt == this->args.end()) {
+                break;
+            }
+
+            result.push_back(ArgumentParser::convertFunction<ResultType>(*valueIt));
+            nameIt += 2;
+        }
+    }
+    return result;
 }
