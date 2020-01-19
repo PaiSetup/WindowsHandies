@@ -46,6 +46,7 @@ static void findIconFileHardcoded(const std::wstring &directory, std::vector<std
         {L"Octave", L"share\\octave\\4.2.2\\imagelib\\octave-logo.ico"},
         {L"Jenkins", L"war\\favicon.ico"},
         {L"Git", L"git-cmd.exe"},
+        {L"7zip", L"7zFM.exe"},
     };
 
     const std::wstring rootDirectoryBaseName = StringHelper::deleteSpaces(StringHelper::basename(directory));
