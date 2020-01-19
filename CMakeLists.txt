@@ -13,6 +13,8 @@ file(GLOB_RECURSE SOURCE_FILES
 set(RESOURCE_DIR "resources")
 file(GLOB RESOURCE_FILES
     "${RESOURCE_DIR}/*.rc"
+    "${RESOURCE_DIR}/*.ico"
+    "${RESOURCE_DIR}/*.h"
 )
 
 set(FILES ${SOURCE_FILES} ${RESOURCE_FILES})
