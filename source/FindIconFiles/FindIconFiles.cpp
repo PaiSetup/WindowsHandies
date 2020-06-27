@@ -19,7 +19,7 @@ static void findIconFileInIconLibrary(const std::wstring &iconLibrary, const std
     // Search directory
     do {
         const std::wstring directoryBaseName = StringHelper::basename(directory);
-        const std::wstring fileName = std::wstring{ file.cFileName };
+        const std::wstring fileName = std::wstring{file.cFileName};
         const std::wstring fileNameExtension = StringHelper::getFileNameExtension(fileName);
         const std::wstring fileNameWithoutExtension = StringHelper::getFileNameWithoutExtension(fileName);
 
@@ -38,14 +38,16 @@ static void findIconFileHardcoded(const std::wstring &directory, std::vector<std
         {L"Bandicut", L"bdcut.exe"},
         {L"BeyondCompare", L"BCompare.exe"},
         {L"cmake", L"bin\\cmake-gui.exe"},
+        {L"Git", L"git-cmd.exe"},
         {L"GPA", L"GpaMonitor.exe"},
         {L"IntelliJ", L"bin\\idea.exe"},
         {L"irfanview", L"i_view64.exe"},
+        {L"Jenkins", L"war\\favicon.ico"},
         {L"MikTex", L"miktex\\bin\\x64\\mf.exe"},
         {L"MicrosoftOffice2013", L"Office15\\FIRSTRUN.exe"},
         {L"Octave", L"share\\octave\\4.2.2\\imagelib\\octave-logo.ico"},
-        {L"Jenkins", L"war\\favicon.ico"},
-        {L"Git", L"git-cmd.exe"},
+        {L"Unity3D", L"Unity Hub\\Unity Hub.exe"},
+        {L"VisualStudioCode", L"Code.exe"},
         {L"7zip", L"7zFM.exe"},
     };
 
@@ -107,6 +109,7 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
             const auto result = iconFileFinders[i](criterionInput);
             if (result == IconFileCriterionResult::Deny) {
                 criteriaResult = IconFileCriterionResult::Deny;
+                break;
             }
             if (result == IconFileCriterionResult::Accept && criteriaResult != IconFileCriterionResult::Deny) {
                 criteriaResult = IconFileCriterionResult::Accept;
