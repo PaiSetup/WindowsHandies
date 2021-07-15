@@ -1,7 +1,7 @@
 #include "AudioContext.h"
 
 #include "source/Audio/AudioDevice.h"
-#include "source/Utility/AssertSuccess.h"
+#include "Common/AssertSuccess.h"
 
 AudioContext::AudioContext() {
     assertSuccess(CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, IID_PPV_ARGS(&enumerator)));

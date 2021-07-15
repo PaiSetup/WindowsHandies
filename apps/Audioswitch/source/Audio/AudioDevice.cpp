@@ -1,6 +1,6 @@
 #include "AudioDevice.h"
 
-#include "source/Utility/AssertSuccess.h"
+#include "Common/AssertSuccess.h"
 
 #include <wrl.h>
 #include <Functiondiscoverykeys_devpkey.h>
