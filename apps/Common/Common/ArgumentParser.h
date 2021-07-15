@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <filesystem>
 
 class ArgumentParser {
     template <typename T>
@@ -32,22 +33,26 @@ public:
 
 private:
     // Conversion from string to various types
-    template <typename Integral, typename = std::enable_if_t<std::is_integral<Integral>::value>>
-    static Integral convertFunction(const std::string &arg) {
-        return static_cast<Integral>(std::stoll(arg));
-    }
-    template <typename String, typename = std::enable_if_t<std::is_same<String, std::string>::value>>
-    static std::string convertFunction(const std::string &arg) {
-        return arg;
-    }
-    template <typename WString, typename = std::enable_if_t<std::is_same<WString, std::wstring>::value>>
-    static std::wstring convertFunction(const std::string &arg) {
-        std::wstring result(arg.size() + 1, L' ');
-        const auto cap = result.capacity();
-        size_t charsConverted{};
-        const auto error = ::mbstowcs_s(&charsConverted, &result[0], result.capacity(), arg.c_str(), arg.size());
-        result.resize(charsConverted - 1);
-        return result;
+
+    template <typename ResultType>
+    static ResultType convertFunction(const std::string &arg) {
+        if constexpr (std::is_integral_v<ResultType>) {
+            return static_cast<ResultType>(std::stoll(arg));
+        }
+        if constexpr (std::is_same_v<ResultType, std::string>) {
+            return arg;
+        }
+        if constexpr (std::is_same_v<ResultType, std::wstring>) {
+            std::wstring result(arg.size() + 1, L' ');
+            const auto cap = result.capacity();
+            size_t charsConverted{};
+            const auto error = ::mbstowcs_s(&charsConverted, &result[0], result.capacity(), arg.c_str(), arg.size());
+            result.resize(charsConverted - 1);
+            return result;
+        }
+        if constexpr (std::is_same_v<ResultType, std::filesystem::path>) {
+            return std::filesystem::path(arg);
+        }
     }
 
     // Arguments captures
