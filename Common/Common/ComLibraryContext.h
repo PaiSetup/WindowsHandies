@@ -1,6 +1,6 @@
 #pragma once
 
-#include "source/Utility/AssertSuccess.h"
+#include "Common/AssertSuccess.h"
 
 #include <Objbase.h>
 
