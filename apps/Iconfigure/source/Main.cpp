@@ -1,6 +1,6 @@
+#include "Common/ArgumentParser.h"
 #include "source/FindIconFiles/FindIconFiles.h"
 #include "source/FindDirectories/FindDirectories.h"
-#include "source/Utility/ArgumentParser.h"
 #include "source/Utility/FileHelper.h"
 
 #include <Shlobj.h>
