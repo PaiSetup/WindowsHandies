@@ -1,0 +1,2 @@
+# Common
+A staitc library with helper functions and classes used in different apps. It should not be used directly, its only purpose is to encapsulate code shared between apps to avoid code duplication.
