@@ -103,11 +103,13 @@ int main(int argc, char **argv) {
     // Validate and retrieve known folder
     if (folderName.empty()) {
         std::cerr << "ERROR: You must specify known folder name (see help)\n";
+        return 1;
     }
     const auto mapping = getKnownFolderIds();
     const auto folderIt = mapping.find(folderName);
     if (folderIt == mapping.end()) {
         std::wcerr << "Invalid folder name specified: " << folderName << '\n';
+        return 1;
     }
     const std::vector<KNOWNFOLDERID> &folderData = folderIt->second;
 
