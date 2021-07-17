@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
 #include <Shlobj.h>
 #include <wrl.h>
+#include <filesystem>
 
 using Microsoft::WRL::ComPtr;
 
@@ -12,8 +12,8 @@ public:
 
     void display();
 
-    void setPath(const std::wstring &path);
-    std::wstring getPath();
+    void setPath(const std::filesystem::path &path);
+    std::filesystem::path getPath();
 
 private:
     ComPtr<IKnownFolder> folder = nullptr;

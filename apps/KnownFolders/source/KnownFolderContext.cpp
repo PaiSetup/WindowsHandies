@@ -13,22 +13,22 @@ void KnownFolderContext::display() {
         return;
     }
 
-    const std::wstring path = getPath();
-    if (path != L"") {
+    const std::filesystem::path path = getPath();
+    if (!path.empty()) {
         std::wcout << definition.pszName << ":    " << path << "\n";
     }
 }
 
-void KnownFolderContext::setPath(const std::wstring &path) {
+void KnownFolderContext::setPath(const std::filesystem::path &path) {
     assertSuccess(folder->SetPath(0, path.c_str()));
 }
 
-std::wstring KnownFolderContext::getPath() {
+std::filesystem::path KnownFolderContext::getPath() {
     wchar_t *path = nullptr;
     if (FAILED(folder->GetPath(0, &path))) {
         return L"";
     }
-    std::wstring result{path};
+    std::filesystem::path result{path};
     CoTaskMemFree(path);
     return result;
 }

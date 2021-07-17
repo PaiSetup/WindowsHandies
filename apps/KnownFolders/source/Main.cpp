@@ -9,65 +9,56 @@
 #include <optional>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <filesystem>
 
-bool createDirectory(const std::filesystem::path &path) {
-    const std::filesystem::path parent = path.parent_path();
-    if (path == parent) {
-        return true;
-    }
-    const bool parentSuccess = createDirectory(parent);
-
-    bool thisSuccess = CreateDirectoryW(path.c_str(), {});
-    if (!thisSuccess && GetLastError() == ERROR_ALREADY_EXISTS) {
-        thisSuccess = true;
-    }
-    return parentSuccess & thisSuccess;
-}
-
-enum class KnownFolder {
-    Music,
-    Videos,
-    Desktop,
-    Documents,
-    Downloads,
-};
-
-std::unordered_map<std::wstring, KnownFolder> getStringToKnownFolderMapping() {
+std::unordered_map<std::wstring, std::vector<KNOWNFOLDERID>> getKnownFolderIds() {
+    // clang-format off
     return {
-        {L"Music", KnownFolder::Music},
-        {L"Videos", KnownFolder::Videos},
-        {L"Desktop", KnownFolder::Desktop},
-        {L"Documents", KnownFolder::Documents},
-        {L"Downloads", KnownFolder::Downloads},
+        {L"Music",     {FOLDERID_LocalMusic,     FOLDERID_Music    }},
+        {L"Videos",    {FOLDERID_LocalVideos,    FOLDERID_Videos   }},
+        {L"Documents", {FOLDERID_LocalDocuments, FOLDERID_Documents}},
+        {L"Downloads", {FOLDERID_LocalDownloads, FOLDERID_Downloads}},
+        {L"Desktop",   {FOLDERID_Desktop                           }},
     };
+    // clang-format on
 }
 
-void setPath(KnownFolderManagerContext &manager, KnownFolder knownFolder, const std::filesystem::path &path) {
-    FATAL_ERROR_IF(!createDirectory(path));
+void migrateFiles(const std::filesystem::path &oldPath, const std::filesystem::path &newPath) {
+    FATAL_ERROR_IF(!std::filesystem::is_directory(oldPath));
+    FATAL_ERROR_IF(!std::filesystem::is_directory(newPath));
 
-    switch (knownFolder) {
-    case KnownFolder::Music:
-        manager.getFolder(FOLDERID_Music).setPath(path);
-        manager.getFolder(FOLDERID_LocalMusic).setPath(path);
-        break;
-    case KnownFolder::Videos:
-        manager.getFolder(FOLDERID_Videos).setPath(path);
-        manager.getFolder(FOLDERID_LocalVideos).setPath(path);
-        break;
-    case KnownFolder::Desktop:
-        manager.getFolder(FOLDERID_Desktop).setPath(path);
-        break;
-    case KnownFolder::Documents:
-        manager.getFolder(FOLDERID_Documents).setPath(path);
-        manager.getFolder(FOLDERID_LocalDocuments).setPath(path);
-        break;
-    case KnownFolder::Downloads:
-        manager.getFolder(FOLDERID_Downloads).setPath(path);
-        manager.getFolder(FOLDERID_LocalDownloads).setPath(path);
-        break;
-    default:
-        FATAL_ERROR();
+    for (const std::filesystem::path &oldFile : std::filesystem::directory_iterator(oldPath)) {
+        const std::filesystem::path &newFile = newPath / oldFile.filename();
+        FATAL_ERROR_IF(std::filesystem::exists(newFile));
+        std::filesystem::rename(oldFile, newFile);
+    }
+}
+
+void setPath(KnownFolderManagerContext &manager,
+             const std::vector<KNOWNFOLDERID> &ids,
+             const std::filesystem::path &newPath,
+             bool performFilesMigration,
+             bool removeOldFolder) {
+    std::filesystem::create_directories(newPath);
+
+    for (const auto &id : ids) {
+        KnownFolderContext folder = manager.getFolder(id);
+        const std::filesystem::path oldPath = folder.getPath();
+        if (newPath == oldPath) {
+            continue;
+        }
+        const bool oldPathExists = std::filesystem::exists(oldPath);
+
+        if (performFilesMigration && oldPathExists) {
+            migrateFiles(oldPath, newPath);
+        }
+
+        folder.setPath(newPath);
+
+        if (removeOldFolder && oldPathExists) {
+            std::filesystem::remove(oldPath);
+        }
     }
 }
 
@@ -82,10 +73,11 @@ void printHelp() {
         << "  -p               Required. New path for the folder.\n"
         << "  -m               Optional. Move files from old path to the new path.\n"
         << "  -d               Optional. Displays all special Windows folders and their paths.\n"
+        << "  -r               Optional. Removes old directory after the change.\n"
         << "  -h               Display this message.\n"
         << "\n"
         << "Available special Windows folder names:\n";
-    for (const auto &entry : getStringToKnownFolderMapping()) {
+    for (const auto &entry : getKnownFolderIds()) {
         std::wcout << "  - " << entry.first << '\n';
     }
 }
@@ -97,6 +89,7 @@ int main(int argc, char **argv) {
     const auto newPath = parser.getArgumentValue<std::filesystem::path>("-p", L"");
     const auto moveFiles = parser.getArgumentValue<bool>("-m", false);
     const auto displayAllFolders = parser.getArgumentValue<bool>("-d", false);
+    const auto removeOldFolder = parser.getArgumentValue<bool>("-r", false);
     const auto help = parser.getArgumentValue<bool>("-h", false);
 
     // Create context
@@ -117,13 +110,13 @@ int main(int argc, char **argv) {
     if (folderName.empty()) {
         std::cerr << "ERROR: You must specify known folder name (see help)\n";
     }
-    const auto mapping = getStringToKnownFolderMapping();
+    const auto mapping = getKnownFolderIds();
     const auto folderIt = mapping.find(folderName);
     if (folderIt == mapping.end()) {
         std::wcerr << "Invalid folder name specified: " << folderName << '\n';
     }
-    const KnownFolder folder = folderIt->second;
+    const std::vector<KNOWNFOLDERID> &folderData = folderIt->second;
 
     // Perform the operation
-    setPath(manager, folder, newPath);
+    setPath(manager, folderData, newPath, moveFiles, removeOldFolder);
 }
