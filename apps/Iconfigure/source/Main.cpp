@@ -1,4 +1,5 @@
 #include "Common/ArgumentParser.h"
+#include "Common/AssertSuccess.h"
 #include "source/FindIconFiles/FindIconFiles.h"
 #include "source/FindDirectories/FindDirectories.h"
 #include "source/Utility/FileHelper.h"
@@ -8,6 +9,29 @@
 #include <strsafe.h>
 #include <string>
 #include <iomanip>
+
+bool hasIcon(const std::wstring &directory) {
+    const DWORD iconPathBufferSize = 4096u;
+    WCHAR iconPath[iconPathBufferSize];
+    SHFOLDERCUSTOMSETTINGS fcs = {};
+    fcs.dwSize = sizeof(SHFOLDERCUSTOMSETTINGS);
+    fcs.dwMask = FCSM_ICONFILE;
+    fcs.pszIconFile = iconPath;
+    fcs.cchIconFile = iconPathBufferSize;
+    HRESULT result = SHGetSetFolderCustomSettings(&fcs, directory.c_str(), FCS_READ);
+    if (result != S_OK) {
+        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+            return false;
+        }
+        std::wcerr << "WARNING: failed setting icon for \"" << directory << "\"\n";
+        FATAL_ERROR();
+    }
+    if (wcslen(iconPath) == 0) {
+        std::wcerr << "WARNING: invalid icon path was returned for \"" << directory << "\"\n";
+        FATAL_ERROR();
+    }
+    return true;
+}
 
 void setIcon(const std::wstring &directory, const std::wstring &iconFile, int iconIndex) {
     // Copy icon file path to non-const buffer
@@ -44,6 +68,7 @@ void printHelp() {
                << "  -l <path>  Icon library path - enables icon library search - select icons from within the\n"
                << "             library directory based on file names.\n"
                << "  -f         Force action - do not prompt user before updating the icons\n"
+               << "  -n         Do not overwrite existing icons\n"
                << "  -h         Display this help message\n";
 }
 
@@ -54,7 +79,8 @@ int main(int argc, char **argv) {
     const auto directories = parser.getArgumentValues<std::wstring>("-d");
     const auto recursiveSearch = parser.getArgumentValue<bool>("-r", false);
     const auto iconLibraryPath = parser.getArgumentValue<std::wstring>("-l", L"");
-    const auto forceAction = parser.getArgumentValue<bool>("-f", false);
+    const auto forceAction = parser.getArgumentValue<bool>("-f", false);    // TODO: This should be -y as in "yes"
+    const auto doNotOverwrite = parser.getArgumentValue<bool>("-n", false); // TODO: Make this a default behaviour and make -f force overwrite.
 
     if (help) {
         printHelp();
@@ -96,6 +122,10 @@ int main(int argc, char **argv) {
     };
     std::vector<DirectoryWithIcons> directoriesWithIcons{};
     for (const auto &directory : subdirectories) {
+        if (doNotOverwrite && hasIcon(directory)) {
+            continue;
+        }
+
         std::wcout << "\t" << std::left << std::setw(30) << directory; // TODO magic number
 
         const auto iconFiles = findIconFile(directory, recursiveSearch, iconLibraryPath);
