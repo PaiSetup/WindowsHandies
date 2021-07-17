@@ -2,15 +2,9 @@
 #include "KnownFolderManagerContext.h"
 
 #include "Common/ComLibraryContext.h"
-#include "Common/AssertSuccess.h"
 #include "Common/ArgumentParser.h"
 
-#include <vector>
-#include <optional>
-#include <iostream>
 #include <unordered_map>
-#include <unordered_set>
-#include <filesystem>
 
 std::unordered_map<std::wstring, std::vector<KNOWNFOLDERID>> getKnownFolderIds() {
     // clang-format off
