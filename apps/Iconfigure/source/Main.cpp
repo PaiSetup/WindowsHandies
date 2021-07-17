@@ -52,24 +52,29 @@ void setIcon(const std::wstring &directory, const std::wstring &iconFile, int ic
 }
 
 void printHelp() {
-    std::wcout << "IconSetter\n"
-               << "\n"
-               << "Iterates over input directories, selects the most appriopriate icon files for them\n"
-               << "and sets the icons using Windows API. Path to folder with directories to set icon for\n"
-               << "and at least one icon search method \n"
-               << "\n"
-               << "Usage\n"
-               << "  IconSetter.exe -d E:\\Programs -r -f\n"
-               << "  IconSetter.exe -d D: -d D:\\Pictures -l D:\\Pictures\\Icons -f\n"
-               << "\n"
-               << "Options\n"
-               << "  -d <path>  Directory - directory, whose children will be updated. Required one or more.\n"
-               << "  -r         Recursive search - enabled recursive search within each directory for icon files\n"
-               << "  -l <path>  Icon library path - enables icon library search - select icons from within the\n"
-               << "             library directory based on file names.\n"
-               << "  -f         Force action - do not prompt user before updating the icons\n"
-               << "  -n         Do not overwrite existing icons\n"
-               << "  -h         Display this help message\n";
+    std::wcout << "Iconfigure\n"
+                  "\n"
+                  "Iterates over input directories, selects the most appriopriate icon files for them and sets \n"
+                  "the icons using Windows API. Path to folder with directories to set icon for and at least \n"
+                  "one icon search method \n"
+                  "\n"
+                  "Example usages:\n"
+                  "  Iconfigure.exe -d E:\\Programs -r                            setup all subdirectories of \n"
+                  "                                                              E:\\Programs by looking for \n"
+                  "                                                              icons in themrecursively.\n"
+                  "\n"
+                  "  Iconfigure.exe -d E:\\Programs -d E:\\Games -l E:\\Icons       setup all subdirectories of \n"
+                  "                                                              E:\\Programs and E:\\Games by \n"
+                  "                                                              looking for icons in E:\\Icons.\n"
+                  "\n"
+                  "Options\n"
+                  "  -d <path>  Directory - directory, whose children will be updated. Required one or more.\n"
+                  "  -r         Recursive search - enabled recursive search within each directory for icon files\n"
+                  "  -l <path>  Icon library path - enables icon library search - select icons from within the\n"
+                  "             library directory based on file names.\n"
+                  "  -y         Do not prompt user before updating the icons\n"
+                  "  -f         Force set icon. Existing icons for selected directories will be overwritten\n"
+                  "  -h         Display this help message\n";
 }
 
 int main(int argc, char **argv) {
@@ -79,8 +84,8 @@ int main(int argc, char **argv) {
     const auto directories = parser.getArgumentValues<std::wstring>("-d");
     const auto recursiveSearch = parser.getArgumentValue<bool>("-r", false);
     const auto iconLibraryPath = parser.getArgumentValue<std::wstring>("-l", L"");
-    const auto forceAction = parser.getArgumentValue<bool>("-f", false);    // TODO: This should be -y as in "yes"
-    const auto doNotOverwrite = parser.getArgumentValue<bool>("-n", false); // TODO: Make this a default behaviour and make -f force overwrite.
+    const auto skipPrompt = parser.getArgumentValue<bool>("-y", false);
+    const auto forceSetIcon = parser.getArgumentValue<bool>("-f", false);
 
     if (help) {
         printHelp();
@@ -122,7 +127,7 @@ int main(int argc, char **argv) {
     };
     std::vector<DirectoryWithIcons> directoriesWithIcons{};
     for (const auto &directory : subdirectories) {
-        if (doNotOverwrite && hasIcon(directory)) {
+        if (!forceSetIcon && hasIcon(directory)) {
             continue;
         }
 
@@ -136,7 +141,7 @@ int main(int argc, char **argv) {
     }
 
     // Prompt user
-    if (!forceAction) {
+    if (!skipPrompt) {
         std::wcout << "Do you want to proceed? (Y/N): ";
         wchar_t input{};
         std::wcin >> input;
@@ -147,6 +152,10 @@ int main(int argc, char **argv) {
     }
 
     // Execute
+    if (directoriesWithIcons.empty()) {
+        std::cout << "No directories for icon setting found\n";
+        return 0;
+    }
     std::wcout << "Setting icons...\n";
     for (const auto &entry : directoriesWithIcons) {
         if (!entry.iconFile.empty()) {
