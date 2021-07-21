@@ -19,8 +19,9 @@ void KnownFolderContext::display() {
     }
 }
 
-void KnownFolderContext::setPath(const std::filesystem::path &path) {
-    assertSuccess(folder->SetPath(0, path.c_str()));
+bool KnownFolderContext::setPath(const std::filesystem::path &path) {
+    HRESULT result = folder->SetPath(0, path.c_str());
+    return SUCCEEDED(result);
 }
 
 std::filesystem::path KnownFolderContext::getPath() {

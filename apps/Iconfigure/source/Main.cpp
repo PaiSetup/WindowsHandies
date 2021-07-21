@@ -10,7 +10,7 @@
 #include <string>
 #include <iomanip>
 
-bool hasIcon(const std::wstring &directory) {
+bool hasIcon(const std::fs::path &directory) {
     const DWORD iconPathBufferSize = 4096u;
     WCHAR iconPath[iconPathBufferSize];
     SHFOLDERCUSTOMSETTINGS fcs = {};
@@ -20,10 +20,11 @@ bool hasIcon(const std::wstring &directory) {
     fcs.cchIconFile = iconPathBufferSize;
     HRESULT result = SHGetSetFolderCustomSettings(&fcs, directory.c_str(), FCS_READ);
     if (result != S_OK) {
-        if (GetLastError() == ERROR_FILE_NOT_FOUND) {
+        auto a = GetLastError();
+        if (a == ERROR_FILE_NOT_FOUND) {
             return false;
         }
-        std::wcerr << "WARNING: failed setting icon for \"" << directory << "\"\n";
+        std::wcerr << "WARNING: failed getting icon for \"" << directory << "\"\n";
         FATAL_ERROR();
     }
     if (wcslen(iconPath) == 0) {
@@ -33,10 +34,10 @@ bool hasIcon(const std::wstring &directory) {
     return true;
 }
 
-void setIcon(const std::wstring &directory, const std::wstring &iconFile, int iconIndex) {
+void setIcon(const std::fs::path &directory, const std::fs::path &iconFile, int iconIndex) {
     // Copy icon file path to non-const buffer
-    auto iconPath = std::make_unique<wchar_t[]>(iconFile.size() + 1);
-    StringCchCopyW(iconPath.get(), iconFile.size() + 1, iconFile.data());
+    auto iconPath = std::make_unique<wchar_t[]>(iconFile.string().length() + 1);
+    StringCchCopyW(iconPath.get(), iconFile.string().length() + 1, iconFile.c_str());
 
     SHFOLDERCUSTOMSETTINGS fcs = {};
     fcs.dwSize = sizeof(SHFOLDERCUSTOMSETTINGS);
@@ -81,9 +82,9 @@ int main(int argc, char **argv) {
     // Parse arguments
     ArgumentParser parser{argc, argv};
     const auto help = parser.getArgumentValue<bool>("-h", false);
-    const auto directories = parser.getArgumentValues<std::wstring>("-d");
+    const auto directories = parser.getArgumentValues<std::fs::path>("-d");
     const auto recursiveSearch = parser.getArgumentValue<bool>("-r", false);
-    const auto iconLibraryPath = parser.getArgumentValue<std::wstring>("-l", L"");
+    const auto iconLibraryPath = parser.getArgumentValue<std::fs::path>("-l", L"");
     const auto skipPrompt = parser.getArgumentValue<bool>("-y", false);
     const auto forceSetIcon = parser.getArgumentValue<bool>("-f", false);
 
@@ -98,8 +99,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    for (const auto &directory : directories) {
-        if (!FileHelper::isDirectory(directory.c_str())) {
+    for (const std::fs::path &directory : directories) {
+        if (!std::fs::is_directory(directory)) {
             printHelp();
             std::wcerr << "ERROR: invalid directory specified - \"" << directory << "\"\n";
             return 1;
@@ -122,19 +123,18 @@ int main(int argc, char **argv) {
     std::cout << "Looking for icons...\n";
     const auto subdirectories = getSubdirectories(directories);
     struct DirectoryWithIcons {
-        std::wstring directory;
-        std::wstring iconFile;
+        std::fs::path directory;
+        std::fs::path iconFile;
     };
     std::vector<DirectoryWithIcons> directoriesWithIcons{};
-    for (const auto &directory : subdirectories) {
+    for (const std::fs::path &directory : subdirectories) {
         if (!forceSetIcon && hasIcon(directory)) {
             continue;
         }
 
         std::wcout << "\t" << std::left << std::setw(30) << directory; // TODO magic number
 
-        const auto iconFiles = findIconFile(directory, recursiveSearch, iconLibraryPath);
-        const auto iconFile = (iconFiles.size() > 0) ? iconFiles[0] : L"";
+        const std::fs::path iconFile = findIconFile(directory, recursiveSearch, iconLibraryPath);
 
         directoriesWithIcons.push_back({directory, iconFile});
         std::wcout << "\t" << iconFile << "\n";

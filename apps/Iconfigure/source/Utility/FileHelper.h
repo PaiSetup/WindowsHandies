@@ -22,6 +22,6 @@ struct FileHelper {
     }
 
     static bool isIconCompatibleExtension(const std::wstring &extension) {
-        return (lstrcmpW(extension.c_str(), L"ico") == 0) || (lstrcmpW(extension.c_str(), L"exe") == 0);
+        return (lstrcmpW(extension.c_str(), L".ico") == 0) || (lstrcmpW(extension.c_str(), L".exe") == 0);
     }
 };

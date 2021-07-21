@@ -7,34 +7,20 @@
 #include <Windows.h>
 #include <iostream>
 
-static void findIconFileInIconLibrary(const std::wstring &iconLibrary, const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
-    // Begin search
-    WIN32_FIND_DATAW file{};
-    HANDLE search_handle = FindFirstFileW((iconLibrary + L"\\*.ico").c_str(), &file);
-    if (search_handle == INVALID_HANDLE_VALUE) {
-        std::wcerr << "WARNING: Failed during icon library search\n";
-        return;
-    }
+static std::fs::path findIconFileInIconLibrary(const std::fs::path &directory, const std::fs::path &iconLibrary) {
+    const std::fs::path directoryBaseName = directory.filename();
 
-    // Search directory
-    do {
-        const std::wstring directoryBaseName = StringHelper::basename(directory);
-        const std::wstring fileName = std::wstring{file.cFileName};
-        const std::wstring fileNameExtension = StringHelper::getFileNameExtension(fileName);
-        const std::wstring fileNameWithoutExtension = StringHelper::getFileNameWithoutExtension(fileName);
-
-        if (StringHelper::compareCaseInsensitive(directoryBaseName, fileNameWithoutExtension)) {
-            const std::wstring fileFullPath = iconLibrary + L"\\" + fileName;
-            outIconFiles.push_back(fileFullPath);
+    for (std::fs::path iconPath : std::fs::directory_iterator(iconLibrary)) {
+        const std::fs::path iconName = iconPath.filename().replace_extension();
+        if (StringHelper::compareCaseInsensitive(directoryBaseName, iconName)) {
+            return iconPath;
         }
-    } while (FindNextFileW(search_handle, &file));
-
-    // End search
-    FindClose(search_handle);
+    }
+    return std::fs::path{};
 }
 
-static void findIconFileHardcoded(const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
-    const static std::vector<std::pair<std::wstring, std::wstring>> hardcodedMap{
+static std::fs::path findIconFileHardcoded(const std::fs::path &directory) {
+    const static std::vector<std::pair<std::wstring, std::fs::path>> hardcodedMap{
         {L"Bandicut", L"bdcut.exe"},
         {L"BeyondCompare", L"BCompare.exe"},
         {L"cmake", L"bin\\cmake-gui.exe"},
@@ -51,57 +37,44 @@ static void findIconFileHardcoded(const std::wstring &directory, std::vector<std
         {L"7zip", L"7zFM.exe"},
     };
 
-    const std::wstring rootDirectoryBaseName = StringHelper::deleteSpaces(StringHelper::basename(directory));
-    std::wstring fileName{};
-    for (auto i = 0u; i < hardcodedMap.size(); i++) {
-        const auto &names = hardcodedMap[i];
-        if (StringHelper::compareCaseInsensitive(names.first, rootDirectoryBaseName)) {
-            fileName = names.second;
+    const std::wstring rootDirectoryBaseName = StringHelper::deleteSpaces(directory.filename());
+    std::fs::path iconFile{};
+    for (const auto &entry : hardcodedMap) {
+        if (StringHelper::compareCaseInsensitive(entry.first, rootDirectoryBaseName)) {
+            iconFile = entry.second;
+            break;
         }
     }
 
-    if (fileName.empty()) {
-        return;
+    if (iconFile.empty()) {
+        return std::fs::path{};
     }
 
-    const std::wstring fileFullPath = directory + L"\\" + fileName;
-    if (!FileHelper::isFile(fileFullPath)) {
+    iconFile = directory / iconFile;
+    if (!std::fs::is_regular_file(iconFile)) {
         std::wcerr << "WARNING: failed during recursive search - hardcoded path was set incorrectly\n";
-        return;
+        return std::fs::path{};
     }
 
-    outIconFiles.push_back(fileFullPath);
+    return iconFile;
 }
 
-static void findIconFileRecursively(const std::wstring &rootDirectory, const std::wstring &directory, std::vector<std::wstring> &outIconFiles) {
-    // Begin search
-    WIN32_FIND_DATAW file{};
-    HANDLE search_handle = FindFirstFileW((directory + L"\\*").c_str(), &file);
-    if (search_handle == INVALID_HANDLE_VALUE) {
-        std::wcerr << "WARNING: Failed during recursive search\n";
-    }
+static std::fs::path findIconFileRecursively(const std::fs::path &rootDirectory, const std::fs::path &directory) {
+    std::vector<std::fs::path> subDirectories{};
 
-    // Search directory
-    std::vector<std::wstring> subDirectories{};
-    do {
-        // Prepare names in appriopriate formats
-        const std::wstring fileName = std::wstring{file.cFileName};
-        IconFileCriterionInput criterionInput{};
-        criterionInput.rootDirectoryBaseName = StringHelper::deleteSpaces(StringHelper::basename(rootDirectory));
-        criterionInput.fileFullPath = directory + L"\\" + fileName;
-        criterionInput.fileNameWithoutExtension = StringHelper::getFileNameWithoutExtension(fileName);
-        criterionInput.fileExtension = StringHelper::getFileNameExtension(fileName);
-
-        // Ignore pseudo-files
-        if (FileHelper::isCurrentOrParentDirectory(file)) {
-            continue;
-        }
-
+    for (std::fs::path file : std::fs::directory_iterator(directory)) {
         // Cache subdirectories to step into them later
-        if (FileHelper::isDirectory(criterionInput.fileFullPath)) {
-            subDirectories.push_back(criterionInput.fileFullPath);
+        if (std::fs::is_directory(file)) {
+            subDirectories.push_back(file);
             continue;
         }
+
+        // Prepare names in appriopriate formats
+        IconFileCriterionInput criterionInput{};
+        criterionInput.rootDirectoryBaseName = StringHelper::deleteSpaces(rootDirectory.filename());
+        criterionInput.fileFullPath = file;
+        criterionInput.fileNameWithoutExtension = file.filename().replace_extension();
+        criterionInput.fileExtension = file.extension();
 
         // Iterate over available criteria
         IconFileCriterionResult criteriaResult = IconFileCriterionResult::DontKnow;
@@ -118,38 +91,45 @@ static void findIconFileRecursively(const std::wstring &rootDirectory, const std
 
         // Push result if accepted acording to criteria
         if (criteriaResult == IconFileCriterionResult::Accept) {
-            outIconFiles.push_back(criterionInput.fileFullPath);
-        }
-    } while (FindNextFileW(search_handle, &file));
-
-    // End search
-    FindClose(search_handle);
-
-    // If not found, search deeper recursively
-    if (outIconFiles.size() == 0) {
-        for (const auto &directory : subDirectories) {
-            findIconFileRecursively(rootDirectory, directory, outIconFiles);
+            return file;
         }
     }
+
+    // If not found, search deeper recursively
+    for (const std::fs::path &subDirectory : subDirectories) {
+        std::fs::path icon = findIconFileRecursively(rootDirectory, subDirectory);
+        if (!icon.empty()) {
+            return icon;
+        }
+    }
+
+    // If still not found, return empty path (meaning failure)
+    return std::fs::path{};
 }
 
-std::vector<std::wstring> findIconFile(const std::wstring &directory, bool recursiveSearch, std::wstring iconLibraryPath) {
-    std::vector<std::wstring> iconFiles{};
+std::fs::path findIconFile(const std::fs::path &directory, bool recursiveSearch, const std::fs::path &iconLibraryPath) {
+    const bool hardcodedSearch = false;
 
     if (!iconLibraryPath.empty()) {
-        findIconFileInIconLibrary(iconLibraryPath, directory, iconFiles);
-        if (!iconFiles.empty()) {
-            return iconFiles;
+        std::fs::path icon = findIconFileInIconLibrary(directory, iconLibraryPath);
+        if (!icon.empty()) {
+            return icon;
+        }
+    }
+
+    if (hardcodedSearch) {
+        std::fs::path icon = findIconFileHardcoded(directory);
+        if (!icon.empty()) {
+            return icon;
         }
     }
 
     if (recursiveSearch) {
-        findIconFileHardcoded(directory, iconFiles);
-        if (!iconFiles.empty()) {
-            return iconFiles;
+        std::fs::path icon = findIconFileRecursively(directory, directory);
+        if (!icon.empty()) {
+            return icon;
         }
-        findIconFileRecursively(directory, directory, iconFiles);
     }
 
-    return iconFiles;
+    return std::fs::path{};
 }

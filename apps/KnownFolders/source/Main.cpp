@@ -18,42 +18,86 @@ std::unordered_map<std::wstring, std::vector<KNOWNFOLDERID>> getKnownFolderIds()
     // clang-format on
 }
 
-void migrateFiles(const std::filesystem::path &oldPath, const std::filesystem::path &newPath) {
+bool migrateFiles(const std::filesystem::path &oldPath, const std::filesystem::path &newPath) {
     FATAL_ERROR_IF(!std::filesystem::is_directory(oldPath));
     FATAL_ERROR_IF(!std::filesystem::is_directory(newPath));
 
+    bool success = true;
     for (const std::filesystem::path &oldFile : std::filesystem::directory_iterator(oldPath)) {
         const std::filesystem::path &newFile = newPath / oldFile.filename();
         FATAL_ERROR_IF(std::filesystem::exists(newFile));
-        std::filesystem::rename(oldFile, newFile);
+
+        std::error_code error{};
+        std::filesystem::rename(oldFile, newFile, error);
+        if (error) {
+            std::cerr << "WARNING: moving file " << oldFile << " to " << newPath << " failed (errorCode " << error << ")\n";
+            success = false;
+        }
     }
+
+    return success;
 }
 
-void setPath(KnownFolderManagerContext &manager,
+bool setPath(KnownFolderManagerContext &manager,
              const std::vector<KNOWNFOLDERID> &ids,
              const std::filesystem::path &newPath,
              bool performFilesMigration,
              bool removeOldFolder) {
     std::filesystem::create_directories(newPath);
 
+    // Prepare helper structs
+    struct SetPathInfo {
+        KnownFolderContext folder;
+        std::filesystem::path oldPath;
+        bool pathChanged;
+        bool oldPathExists;
+    };
+    std::vector<SetPathInfo> infos = {};
     for (const auto &id : ids) {
-        KnownFolderContext folder = manager.getFolder(id);
-        const std::filesystem::path oldPath = folder.getPath();
-        if (newPath == oldPath) {
-            continue;
-        }
-        const bool oldPathExists = std::filesystem::exists(oldPath);
+        infos.emplace_back();
+        SetPathInfo &info = infos.back();
+        info.folder = manager.getFolder(id);
+        info.oldPath = info.folder.getPath();
+        info.pathChanged = newPath != info.oldPath;
+        info.oldPathExists = std::filesystem::exists(info.oldPath);
+    }
 
-        if (performFilesMigration && oldPathExists) {
-            migrateFiles(oldPath, newPath);
-        }
-
-        folder.setPath(newPath);
-
-        if (removeOldFolder && oldPathExists) {
-            std::filesystem::remove(oldPath);
+    // Perform migrations
+    if (performFilesMigration) {
+        for (SetPathInfo &info : infos) {
+            if (info.pathChanged && info.oldPathExists) {
+                if (!migrateFiles(info.oldPath, newPath)) {
+                    std::wcerr << "ERROR: failed migrating files from " << info.oldPath << '\n';
+                    return false;
+                }
+            }
         }
     }
+
+    // Change path
+    for (SetPathInfo &info : infos) {
+        if (info.pathChanged) {
+            if (!info.folder.setPath(newPath)) {
+                std::wcerr << "ERROR: failed changing known folder\n";
+                return false;
+            }
+        }
+    }
+
+    // Remove old folder
+    if (removeOldFolder) {
+        for (SetPathInfo &info : infos) {
+            if (info.pathChanged && info.oldPathExists) {
+                std::error_code error{};
+                std::filesystem::remove_all(info.oldPath, error);
+                if (error) {
+                    std::cerr << "WARNING: removing old known folder location (" << info.oldPath << ") failed (errorCode " << error << ")\n";
+                }
+            }
+        }
+    }
+
+    return true;
 }
 
 void printHelp() {
@@ -114,5 +158,12 @@ int main(int argc, char **argv) {
     const std::vector<KNOWNFOLDERID> &folderData = folderIt->second;
 
     // Perform the operation
-    setPath(manager, folderData, newPath, moveFiles, removeOldFolder);
+    const bool success = setPath(manager, folderData, newPath, moveFiles, removeOldFolder);
+    if (success) {
+        std::wcerr << "SUCCESS: " << folderName << " is now located at " << newPath << '\n';
+        return 0;
+    } else {
+        std::wcerr << "FAILURE\n";
+        return 1;
+    }
 }

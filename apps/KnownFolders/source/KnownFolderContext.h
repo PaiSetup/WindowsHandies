@@ -8,11 +8,16 @@ using Microsoft::WRL::ComPtr;
 
 class KnownFolderContext {
 public:
+    KnownFolderContext() = default;
     KnownFolderContext(IKnownFolder *folder);
+    KnownFolderContext(const KnownFolderContext &) = default;
+    KnownFolderContext &operator=(const KnownFolderContext &) = default;
+    KnownFolderContext(KnownFolderContext &&) = default;
+    KnownFolderContext &operator=(KnownFolderContext &&) = default;
 
     void display();
 
-    void setPath(const std::filesystem::path &path);
+    bool setPath(const std::filesystem::path &path);
     std::filesystem::path getPath();
 
 private:

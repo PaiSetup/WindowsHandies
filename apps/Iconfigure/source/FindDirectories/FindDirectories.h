@@ -2,5 +2,10 @@
 
 #include <vector>
 #include <string>
+#include <filesystem>
 
-std::vector<std::wstring> getSubdirectories(const std::vector<std::wstring> &directories);
+namespace std {
+namespace fs = std::filesystem;
+}
+
+std::vector<std::fs::path> getSubdirectories(const std::vector<std::fs::path> &directories);
