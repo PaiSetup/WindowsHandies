@@ -1,12 +1,8 @@
 #pragma once
 
 #include <functional>
-#include <filesystem>
+#include "source/Utility/Filesystem.h"
 #include <string>
-
-namespace std {
-namespace fs = std::filesystem;
-}
 
 enum class IconFileCriterionResult {
     Accept,

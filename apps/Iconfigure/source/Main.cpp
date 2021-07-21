@@ -1,55 +1,9 @@
 #include "Common/ArgumentParser.h"
-#include "Common/AssertSuccess.h"
-#include "source/FindIconFiles/FindIconFiles.h"
-#include "source/FindDirectories/FindDirectories.h"
+#include "source/IconEngine.h"
 
-#include <Shlobj.h>
 #include <iostream>
-#include <strsafe.h>
 #include <string>
 #include <iomanip>
-
-bool hasIcon(const std::fs::path &directory) {
-    const DWORD iconPathBufferSize = 4096u;
-    WCHAR iconPath[iconPathBufferSize];
-    SHFOLDERCUSTOMSETTINGS fcs = {};
-    fcs.dwSize = sizeof(SHFOLDERCUSTOMSETTINGS);
-    fcs.dwMask = FCSM_ICONFILE;
-    fcs.pszIconFile = iconPath;
-    fcs.cchIconFile = iconPathBufferSize;
-    HRESULT result = SHGetSetFolderCustomSettings(&fcs, directory.c_str(), FCS_READ);
-    if (result != S_OK) {
-        auto a = GetLastError();
-        if (a == ERROR_FILE_NOT_FOUND) {
-            return false;
-        }
-        std::wcerr << "WARNING: failed getting icon for \"" << directory << "\"\n";
-        FATAL_ERROR();
-    }
-    if (wcslen(iconPath) == 0) {
-        std::wcerr << "WARNING: invalid icon path was returned for \"" << directory << "\"\n";
-        FATAL_ERROR();
-    }
-    return true;
-}
-
-void setIcon(const std::fs::path &directory, const std::fs::path &iconFile, int iconIndex) {
-    // Copy icon file path to non-const buffer
-    auto iconPath = std::make_unique<wchar_t[]>(iconFile.string().length() + 1);
-    StringCchCopyW(iconPath.get(), iconFile.string().length() + 1, iconFile.c_str());
-
-    SHFOLDERCUSTOMSETTINGS fcs = {};
-    fcs.dwSize = sizeof(SHFOLDERCUSTOMSETTINGS);
-    fcs.dwMask = FCSM_ICONFILE;
-    fcs.pszIconFile = iconPath.get();
-    fcs.cchIconFile = 0;
-    fcs.iIconIndex = iconIndex;
-    HRESULT result = SHGetSetFolderCustomSettings(&fcs, directory.c_str(), FCS_FORCEWRITE);
-    if (result != S_OK) {
-        auto err = GetLastError();
-        std::wcerr << "WARNING: failed setting icon for \"" << directory << "\"\n";
-    }
-}
 
 void printHelp() {
     std::wcout << "Iconfigure\n"
@@ -119,21 +73,22 @@ int main(int argc, char **argv) {
     }
 
     // Find icon files
+    IconEngine iconEngine{};
     std::cout << "Looking for icons...\n";
-    const auto subdirectories = getSubdirectories(directories);
+    const auto subdirectories = iconEngine.getSubdirectories(directories);
     struct DirectoryWithIcons {
         std::fs::path directory;
         std::fs::path iconFile;
     };
     std::vector<DirectoryWithIcons> directoriesWithIcons{};
     for (const std::fs::path &directory : subdirectories) {
-        if (!forceSetIcon && hasIcon(directory)) {
+        if (!forceSetIcon && iconEngine.hasIcon(directory)) {
             continue;
         }
 
         std::wcout << "\t" << std::left << std::setw(30) << directory; // TODO magic number
 
-        const std::fs::path iconFile = findIconFile(directory, recursiveSearch, iconLibraryPath);
+        const std::fs::path iconFile = iconEngine.findIconFile(directory, recursiveSearch, iconLibraryPath);
 
         directoriesWithIcons.push_back({directory, iconFile});
         std::wcout << "\t" << iconFile << "\n";
@@ -158,7 +113,7 @@ int main(int argc, char **argv) {
     std::wcout << "Setting icons...\n";
     for (const auto &entry : directoriesWithIcons) {
         if (!entry.iconFile.empty()) {
-            setIcon(entry.directory, entry.iconFile, 0);
+            iconEngine.setIcon(entry.directory, entry.iconFile, 0);
         }
     }
 
