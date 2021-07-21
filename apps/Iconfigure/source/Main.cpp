@@ -28,7 +28,8 @@ void printHelp() {
                   "             library directory based on file names.\n"
                   "  -y         Do not prompt user before updating the icons\n"
                   "  -f         Force set icon. Existing icons for selected directories will be overwritten\n"
-                  "  -h         Display this help message\n";
+                  "  -h         Display this help message\n"
+                  "  -q         Quiet mode\n";
 }
 
 int main(int argc, char **argv) {
@@ -40,6 +41,7 @@ int main(int argc, char **argv) {
     const auto iconLibraryPath = parser.getArgumentValue<std::fs::path>("-l", L"");
     const auto skipPrompt = parser.getArgumentValue<bool>("-y", false);
     const auto forceSetIcon = parser.getArgumentValue<bool>("-f", false);
+    const auto quiet = parser.getArgumentValue<bool>("-q", false);
 
     if (help) {
         printHelp();
@@ -85,13 +87,21 @@ int main(int argc, char **argv) {
         if (!forceSetIcon && iconEngine.hasIcon(directory)) {
             continue;
         }
-
-        std::wcout << "\t" << std::left << std::setw(30) << directory; // TODO magic number
-
         const std::fs::path iconFile = iconEngine.findIconFile(directory, recursiveSearch, iconLibraryPath);
-
         directoriesWithIcons.push_back({directory, iconFile});
-        std::wcout << "\t" << iconFile << "\n";
+    }
+
+    // Print found icon files
+    if (!quiet) {
+        size_t maxDirectoryLength = 0;
+        for (const DirectoryWithIcons &entry : directoriesWithIcons) {
+            maxDirectoryLength = std::max(maxDirectoryLength, entry.directory.string().size());
+        }
+
+        for (const DirectoryWithIcons &entry : directoriesWithIcons) {
+            std::wcout << "\t" << std::left << std::setw(maxDirectoryLength) << entry.directory.wstring();
+            std::wcout << " " << entry.iconFile.wstring() << "\n";
+        }
     }
 
     // Prompt user
