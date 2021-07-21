@@ -2,7 +2,6 @@
 #include "Common/AssertSuccess.h"
 #include "source/FindIconFiles/FindIconFiles.h"
 #include "source/FindDirectories/FindDirectories.h"
-#include "source/Utility/FileHelper.h"
 
 #include <Shlobj.h>
 #include <iostream>
@@ -113,7 +112,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    if (!iconLibraryPath.empty() && !FileHelper::isDirectory(iconLibraryPath.c_str())) {
+    if (!iconLibraryPath.empty() && !std::fs::is_directory(iconLibraryPath)) {
         printHelp();
         std::wcerr << "ERROR: invalid icon library path specified\n";
         return 1;

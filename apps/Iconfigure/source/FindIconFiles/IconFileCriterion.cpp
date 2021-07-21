@@ -1,14 +1,13 @@
 #include "IconFileCriterion.h"
 
 #include "source/Utility/StringHelper.h"
-#include "source/Utility/FileHelper.h"
 
 #include <unordered_map>
 
 const IconFileCriterion iconFileFinders[] = {
     // Deny non-files
     +[](const IconFileCriterionInput &input) {
-        if (!FileHelper::isFile(input.fileFullPath)) {
+        if (!std::fs::is_regular_file(input.fileFullPath)) {
             return IconFileCriterionResult::Deny;
         }
         return IconFileCriterionResult::DontKnow;
@@ -16,11 +15,13 @@ const IconFileCriterion iconFileFinders[] = {
 
     // Deny no-icon files
     +[](const IconFileCriterionInput &input) {
-        // TODO check if file actually has icon
-        if (!FileHelper::isIconCompatibleExtension(input.fileExtension)) {
-            return IconFileCriterionResult::Deny;
+        const std::fs::path iconCompatibleExtensions[] = {".exe", ".ico"};
+        for (const std::fs::path &iconCompatibleExtension : iconCompatibleExtensions) {
+            if (input.fileExtension == iconCompatibleExtension) {
+                return IconFileCriterionResult::DontKnow;
+            }
         }
-        return IconFileCriterionResult::DontKnow;
+        return IconFileCriterionResult::Deny;
     },
 
     // Deny VisualStudio (for some reason setting icon to it does not work)

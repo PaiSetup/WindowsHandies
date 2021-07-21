@@ -2,7 +2,6 @@
 
 #include "source/FindIconFiles/IconFileCriterion.h"
 #include "source/Utility/StringHelper.h"
-#include "source/Utility/FileHelper.h"
 
 #include <Windows.h>
 #include <iostream>
@@ -37,7 +36,7 @@ static std::fs::path findIconFileHardcoded(const std::fs::path &directory) {
         {L"7zip", L"7zFM.exe"},
     };
 
-    const std::wstring rootDirectoryBaseName = StringHelper::deleteSpaces(directory.filename());
+    const std::wstring rootDirectoryBaseName = directory.filename();
     std::fs::path iconFile{};
     for (const auto &entry : hardcodedMap) {
         if (StringHelper::compareCaseInsensitive(entry.first, rootDirectoryBaseName)) {
@@ -71,7 +70,7 @@ static std::fs::path findIconFileRecursively(const std::fs::path &rootDirectory,
 
         // Prepare names in appriopriate formats
         IconFileCriterionInput criterionInput{};
-        criterionInput.rootDirectoryBaseName = StringHelper::deleteSpaces(rootDirectory.filename());
+        criterionInput.rootDirectoryBaseName = rootDirectory.filename();
         criterionInput.fileFullPath = file;
         criterionInput.fileNameWithoutExtension = file.filename().replace_extension();
         criterionInput.fileExtension = file.extension();

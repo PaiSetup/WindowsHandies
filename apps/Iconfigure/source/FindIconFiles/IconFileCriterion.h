@@ -1,7 +1,12 @@
 #pragma once
 
 #include <functional>
+#include <filesystem>
 #include <string>
+
+namespace std {
+namespace fs = std::filesystem;
+}
 
 enum class IconFileCriterionResult {
     Accept,
@@ -10,10 +15,10 @@ enum class IconFileCriterionResult {
 };
 
 struct IconFileCriterionInput {
-    std::wstring rootDirectoryBaseName;
-    std::wstring fileFullPath;
-    std::wstring fileNameWithoutExtension;
-    std::wstring fileExtension;
+    std::fs::path rootDirectoryBaseName;
+    std::fs::path fileFullPath;
+    std::fs::path fileNameWithoutExtension;
+    std::fs::path fileExtension;
 };
 
 using IconFileCriterion = std::function<IconFileCriterionResult(const IconFileCriterionInput &input)>;
