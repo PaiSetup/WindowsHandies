@@ -6,6 +6,7 @@
 #include <iostream>
 #include <Shlobj.h>
 #include <strsafe.h>
+#include <fstream>
 
 std::vector<std::fs::path> IconEngine::getSubdirectories(const std::vector<std::fs::path> &directories) {
     std::vector<std::fs::path> subdirectories{};
@@ -62,7 +63,7 @@ void IconEngine::setIcon(const std::fs::path &directory, const std::fs::path &ic
 }
 
 std::fs::path IconEngine::findIconFile(const std::fs::path &directory, bool recursiveSearch, const std::fs::path &iconLibraryPath) {
-    const bool hardcodedSearch = false;
+    const bool hardcodedSearch = recursiveSearch;
 
     if (!iconLibraryPath.empty()) {
         std::fs::path icon = findIconFileInIconLibrary(directory, iconLibraryPath);
@@ -101,22 +102,20 @@ std::fs::path IconEngine::findIconFileInIconLibrary(const std::fs::path &directo
 }
 
 std::fs::path IconEngine::findIconFileHardcoded(const std::fs::path &directory) {
-    const static std::vector<std::pair<std::wstring, std::fs::path>> hardcodedMap{
-        {L"Bandicut", L"bdcut.exe"},
-        {L"BeyondCompare", L"BCompare.exe"},
-        {L"cmake", L"bin\\cmake-gui.exe"},
-        {L"Git", L"git-cmd.exe"},
-        {L"GPA", L"GpaMonitor.exe"},
-        {L"IntelliJ", L"bin\\idea.exe"},
-        {L"irfanview", L"i_view64.exe"},
-        {L"Jenkins", L"war\\favicon.ico"},
-        {L"MikTex", L"miktex\\bin\\x64\\mf.exe"},
-        {L"MicrosoftOffice2013", L"Office15\\FIRSTRUN.exe"},
-        {L"Octave", L"share\\octave\\4.2.2\\imagelib\\octave-logo.ico"},
-        {L"Unity3D", L"Unity Hub\\Unity Hub.exe"},
-        {L"VisualStudioCode", L"Code.exe"},
-        {L"7zip", L"7zFM.exe"},
-    };
+    // Get hardcodes file
+    char buffer[4096];
+    FATAL_ERROR_IF(GetModuleFileNameA(nullptr, buffer, sizeof(buffer)) == 0);
+    const std::fs::path hardcodesFilePath = std::fs::path{buffer}.parent_path() / "IconfigureHardcodes.txt";
+    std::wifstream hardcodesFile{hardcodesFilePath, std::ios::in};
+    FATAL_ERROR_IF(!hardcodesFile);
+
+    std::vector<std::pair<std::wstring, std::fs::path>> hardcodedMap;
+    while (hardcodesFile) {
+        std::wstring name;
+        std::fs::path path;
+        hardcodesFile >> name >> path;
+        hardcodedMap.push_back({name, path});
+    }
 
     const std::wstring rootDirectoryBaseName = directory.filename();
     std::fs::path iconFile{};

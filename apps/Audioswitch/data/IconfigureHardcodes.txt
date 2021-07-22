@@ -1,0 +1,17 @@
+Bandicut         bdcut.exe
+BeyondCompare    BCompare.exe
+cmake            bin\\cmake-gui.exe
+Git              git-cmd.exe
+GPA              GpaMonitor.exe
+IntelliJ         bin\\idea.exe
+irfanview        i_view64.exe
+Jenkins          war\\favicon.ico
+MikTex           miktex\\bin\\x64\\mf.exe
+Octave           share\\octave\\4.2.2\\imagelib\\octave-logo.ico
+Unity3D          Unity Hub\\Unity Hub.exe
+VisualStudioCode Code.exe
+7zip             7zFM.exe
+CrystalDiskMark  DiskMark64.exe
+CrystalDiskInfo  DiskInfo64.exe
+Graphviz         Uninstall.exe
+SysInternals     procexp64.exe
