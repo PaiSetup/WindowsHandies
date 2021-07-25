@@ -1,3 +1,4 @@
+AdobeReader      Reader\\AcroRd32.exe
 Bandicut         bdcut.exe
 BeyondCompare    BCompare.exe
 cmake            bin\\cmake-gui.exe
@@ -5,6 +6,7 @@ Git              git-cmd.exe
 GPA              GpaMonitor.exe
 IntelliJ         bin\\idea.exe
 irfanview        i_view64.exe
+Java             jre8\\bin\\java.exe
 Jenkins          war\\favicon.ico
 MikTex           miktex\\bin\\x64\\mf.exe
 Octave           share\\octave\\4.2.2\\imagelib\\octave-logo.ico
