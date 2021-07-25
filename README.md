@@ -4,3 +4,4 @@ A collection of simple applications for achieving various Windows tasks programa
   1. [Iconfigure](apps/Iconfigure)
   2. [Audioswitch](apps/Audioswitch)
   3. [KnownFolders](apps/KnownFolders)
+  4. [VeracryptSwitch](apps/VeracryptSwitch)

@@ -36,6 +36,9 @@ private:
 
     template <typename ResultType>
     static ResultType convertFunction(const std::string &arg) {
+        if constexpr (std::is_same_v<ResultType, wchar_t>) {
+            return static_cast<ResultType>(arg[0]);
+        }
         if constexpr (std::is_integral_v<ResultType>) {
             return static_cast<ResultType>(std::stoll(arg));
         }
