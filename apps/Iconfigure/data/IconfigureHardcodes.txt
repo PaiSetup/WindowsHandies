@@ -1,4 +1,5 @@
 AdobeReader      Reader\\AcroRd32.exe
+AndroidStudio    bin\\studio.exe
 Bandicut         bdcut.exe
 BeyondCompare    BCompare.exe
 cmake            bin\\cmake-gui.exe
