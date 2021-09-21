@@ -3,12 +3,15 @@ AndroidStudio    bin\\studio.exe
 Bandicut         bdcut.exe
 BeyondCompare    BCompare.exe
 cmake            bin\\cmake-gui.exe
+Doxygen          bin\\doxywizard.exe
 Git              git-cmd.exe
 GPA              GpaMonitor.exe
 IntelliJ         bin\\idea.exe
 irfanview        i_view64.exe
 Java             jre8\\bin\\java.exe
 Jenkins          war\\favicon.ico
+LLVM             Uninstall.exe
+LLVM_12.0.1      Uninstall.exe
 MikTex           miktex\\bin\\x64\\mf.exe
 Octave           share\\octave\\4.2.2\\imagelib\\octave-logo.ico
 Unity3D          Unity Hub\\Unity Hub.exe
