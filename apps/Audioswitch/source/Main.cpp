@@ -1,28 +1,23 @@
 #include "Common/ComLibraryContext.h"
+#include "Common/SingleAppInstanceContext.h"
 #include "source/AudioContext.h"
-#include "source/AudioDevice.h"
+#include "source/TrayIcon.h"
 
-int calculateNextDeviceIndex(int currentIndex, size_t size) {
-    if (currentIndex < 0) {
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hprev, LPSTR cmdline, int show) {
+    SingleAppInstanceContext singleAppInstanceContext("Audioswitch");
+    if (!singleAppInstanceContext.isValid()) {
+        std::cout << "Another instance is already running.\n";
         return 0;
     }
 
-    return (currentIndex + 1) % size;
-}
-
-int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hprev, LPSTR cmdline, int show) {
     ComLibraryContext comLibraryContext{};
     AudioContext audioContext{};
 
-    auto devices = audioContext.enumerateActiveDevices();
-    if (devices.size() == 0) {
-        return 0;
-    }
-
-    auto currentDeviceIndex = audioContext.getDefaultDeviceIndex(devices);
-    auto newDeviceIndex = calculateNextDeviceIndex(currentDeviceIndex, devices.size());
-    if (currentDeviceIndex != newDeviceIndex) {
-        audioContext.setAsDefault(devices[newDeviceIndex]);
+    TrayIcon trayIcon(hInstance, audioContext);
+    MSG message{};
+    while (GetMessage(&message, NULL, 0, 0)) {
+        TranslateMessage(&message);
+        DispatchMessage(&message);
     }
 
     return 0;

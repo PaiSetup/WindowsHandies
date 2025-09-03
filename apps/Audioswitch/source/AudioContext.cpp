@@ -44,6 +44,26 @@ int AudioContext::getDefaultDeviceIndex(const std::vector<AudioDevice> &devices)
     return -1;
 }
 
-void AudioContext::setAsDefault(const AudioDevice &device) {
+void AudioContext::setDevice(const AudioDevice &device) {
     assertSuccess(policyConfig->SetDefaultEndpoint(device.getId(), eMultimedia));
+    assertSuccess(policyConfig->SetDefaultEndpoint(device.getId(), eCommunications));
+}
+
+void AudioContext::cycleToNextDevice() {
+    auto devices = enumerateActiveDevices();
+    if (devices.size() == 0) {
+        return;
+    }
+
+    auto currentDeviceIndex = getDefaultDeviceIndex(devices);
+    auto newDeviceIndex = calculateNextDeviceIndex(currentDeviceIndex, devices.size());
+    setDevice(devices[newDeviceIndex]);
+}
+
+int AudioContext::calculateNextDeviceIndex(int currentIndex, size_t size) {
+    if (currentIndex < 0) {
+        return 0;
+    }
+
+    return (currentIndex + 1) % size;
 }

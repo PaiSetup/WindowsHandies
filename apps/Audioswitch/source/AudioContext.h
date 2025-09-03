@@ -14,9 +14,12 @@ public:
     AudioContext();
     std::vector<AudioDevice> enumerateActiveDevices();
     int getDefaultDeviceIndex(const std::vector<AudioDevice> &devices);
-    void setAsDefault(const AudioDevice &device);
+    void setDevice(const AudioDevice &device);
+    void cycleToNextDevice();
 
 private:
+    static int calculateNextDeviceIndex(int currentIndex, size_t size);
+
     Microsoft::WRL::ComPtr<IMMDeviceEnumerator> enumerator{};
     Microsoft::WRL::ComPtr<IPolicyConfigVista> policyConfig{};
 };
