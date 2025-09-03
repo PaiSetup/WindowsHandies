@@ -1,6 +1,6 @@
 #pragma once
 
-#include "source/Utility/IPolicyConfigVista.h"
+#include "source/IPolicyConfigVista.h"
 
 #include <Objbase.h>
 #include <vector>

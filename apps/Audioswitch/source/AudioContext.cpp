@@ -1,6 +1,6 @@
 #include "AudioContext.h"
 
-#include "source/Audio/AudioDevice.h"
+#include "source/AudioDevice.h"
 #include "Common/AssertSuccess.h"
 
 AudioContext::AudioContext() {

@@ -1,6 +1,6 @@
 #include "Common/ComLibraryContext.h"
-#include "source/Audio/AudioContext.h"
-#include "source/Audio/AudioDevice.h"
+#include "source/AudioContext.h"
+#include "source/AudioDevice.h"
 
 int calculateNextDeviceIndex(int currentIndex, size_t size) {
     if (currentIndex < 0) {
